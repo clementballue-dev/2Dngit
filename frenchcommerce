@@ -113,3 +113,6 @@
 git add index.html
 git commit -m "Ajout index.html pour GitHub Pages"
 git push origin main
+git add index.html
+git commit -m "Ajout index.html pour GitHub Pages"
+git push origin main
