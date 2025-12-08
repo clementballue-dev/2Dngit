@@ -1,148 +1,318 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<title>France Commerce</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Recherche commerces — FrenchCommerce</title>
+  <style>
+    :root{
+      --sidebar-w: 220px;
+      --accent: #007bff;
+      --bg: #f7f8fb;
+      --card: #ffffff;
+      --muted: #666;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+      display:flex;
+      height:100vh;
+      background:var(--bg);
+      color:#111;
+    }
 
-<style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  display: flex;
-  height: 100vh;
-}
+    /* Sidebar */
+    .sidebar{
+      width:var(--sidebar-w);
+      padding:16px;
+      background:linear-gradient(180deg,#fafbff,#f2f6ff);
+      border-right:1px solid #e6e9f2;
+      overflow:auto;
+    }
+    .block {margin-bottom:18px;}
+    h3{margin:6px 0 10px;font-size:14px;color:#222}
+    .btn{
+      display:block;
+      width:100%;
+      padding:8px 10px;
+      margin:6px 0;
+      border:1px solid #ddd;
+      background:var(--card);
+      text-align:left;
+      cursor:pointer;
+      border-radius:6px;
+      transition:all .12s;
+      font-size:14px;
+    }
+    .btn:hover{transform:translateY(-1px);box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+    .btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-.sidebar {
-  width: 280px;
-  background: #f4f4f4;
-  padding: 15px;
-  overflow-y: auto;
-  border-right: 2px solid #ddd;
-}
+    /* Main */
+    .main{
+      flex:1;
+      padding:24px;
+      overflow:auto;
+    }
+    .center{
+      max-width:980px;
+      margin:0 auto;
+      background:var(--card);
+      padding:20px;
+      border-radius:10px;
+      box-shadow:0 6px 20px rgba(18,38,63,0.06);
+    }
+    .title-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{margin:0;font-size:20px}
+    .subtitle{color:var(--muted);margin-top:6px;font-size:14px}
 
-.sidebar h2 {
-  margin-top: 20px;
-  margin-bottom: 8px;
-}
+    .results{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:12px;
+    }
+    .card{
+      background:linear-gradient(180deg,#fff,#fbfdff);
+      border:1px solid #eef2ff;
+      padding:12px;
+      border-radius:8px;
+      min-height:70px;
+    }
+    .muted{color:var(--muted);font-size:13px}
 
-.sidebar button {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 5px;
-  border: 1px solid #ccc;
-  background: white;
-  cursor: pointer;
-}
+    .controls {margin-top:14px;display:flex;gap:8px;flex-wrap:wrap}
+    .btn-outline{background:transparent;border:1px solid #ddd;padding:8px 12px;border-radius:8px;cursor:pointer}
+    .btn-danger{background:#e53e3e;color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer}
 
-.sidebar button:hover {
-  background: #e0e0e0;
-}
-
-.sidebar button.active {
-  background: #007bff;
-  color: white;
-}
-
-.main {
-  flex: 1;
-  padding: 40px;
-}
-
-.result {
-  font-size: 26px;
-  font-weight: bold;
-  margin-top: 40px;
-}
-</style>
+    footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+    @media(max-width:760px){
+      .sidebar{display:none}
+      body{flex-direction:column}
+      .main{padding:12px}
+      .center{margin:12px}
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="sidebar">
-  <h2>Régions</h2>
-  <div id="regions"></div>
+  <!-- SIDEBAR -->
+  <aside class="sidebar" aria-label="Filtres">
+    <div class="block">
+      <h3>Régions (France métropolitaine)</h3>
+      <div id="regionsList"></div>
+    </div>
 
-  <h2>Commerces</h2>
-  <div id="commerces"></div>
-</div>
+    <div class="block">
+      <h3>Types de commerce</h3>
+      <div id="commerceList"></div>
+    </div>
 
-<div class="main">
-  <h1>France Commerce</h1>
-  <p>Clique sur une région et un commerce</p>
-  <div class="result" id="result">Aucune sélection</div>
-</div>
+    <div class="block">
+      <h3>Actions</h3>
+      <button class="btn-outline btn" id="clearBtn">Réinitialiser</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="center" role="main">
+      <div class="title-row">
+        <div>
+          <h1 id="pageTitle">Choisissez une région et un commerce</h1>
+          <div class="subtitle" id="pageSubtitle">Cliquez sur une région puis sur un commerce pour voir les résultats.</div>
+        </div>
+        <div>
+          <div class="muted" id="currentSelection">Aucune sélection</div>
+        </div>
+      </div>
+
+      <div class="controls" id="controlsTop" style="display:none">
+        <button class="btn-outline" id="showAllBtn">Afficher tout</button>
+        <button class="btn-danger" id="clearBtn2">Réinitialiser</button>
+      </div>
+
+      <div class="results" id="resultsArea" aria-live="polite" style="margin-top:18px">
+        <!-- Résultats ajoutés par JS -->
+      </div>
+
+      <footer>
+        Démonstration — résultats fictifs. Remplacez par vos données réelles si besoin.
+      </footer>
+    </div>
+  </main>
 
 <script>
-const regions = [
-"Auvergne-Rhône-Alpes",
-"Bourgogne-Franche-Comté",
-"Bretagne",
-"Centre-Val de Loire",
-"Corse",
-"Grand Est",
-"Hauts-de-France",
-"Île-de-France",
-"Normandie",
-"Nouvelle-Aquitaine",
-"Occitanie",
-"Pays de la Loire",
-"Provence-Alpes-Côte d’Azur"
-];
+  // LISTES (régions métropolitaines + types de commerce)
+  const regions = [
+    "Auvergne-Rhône-Alpes",
+    "Bourgogne-Franche-Comté",
+    "Bretagne",
+    "Centre-Val de Loire",
+    "Corse",
+    "Grand Est",
+    "Hauts-de-France",
+    "Île-de-France",
+    "Normandie",
+    "Nouvelle-Aquitaine",
+    "Occitanie",
+    "Pays de la Loire",
+    "Provence-Alpes-Côte d'Azur"
+  ];
 
-const commerces = [
-"Coiffeur",
-"Restaurant",
-"Boulangerie",
-"Pharmacie",
-"Boucherie",
-"Charcutier",
-"Épicerie",
-"Supermarché",
-"Pizzeria",
-"Bar",
-"Café",
-"Tabac",
-"Fleuriste",
-"Vêtements",
-"Chaussures",
-"Opticien",
-"Bijouterie",
-"Garage",
-"Librairie"
-];
+  const commerces = [
+    "Coiffeur","Restaurant","Boulanger","Pharmacie","Boucherie","Charcutier",
+    "Fleuriste","Épicerie","Tabac","Caviste","Librairie","Biscuiterie",
+    "Pressing","Salon de beauté","Opticien","Magasin de vêtements","Bricolage",
+    "Cordonnier","Pâtissier","Fromagerie"
+  ];
 
-let regionChoisie = "";
-let commerceChoisi = "";
+  // Éléments DOM
+  const regionsList = document.getElementById('regionsList');
+  const commerceList = document.getElementById('commerceList');
+  const resultsArea = document.getElementById('resultsArea');
+  const currentSelection = document.getElementById('currentSelection');
+  const pageTitle = document.getElementById('pageTitle');
+  const pageSubtitle = document.getElementById('pageSubtitle');
+  const controlsTop = document.getElementById('controlsTop');
+  const clearBtn = document.getElementById('clearBtn');
+  const clearBtn2 = document.getElementById('clearBtn2');
 
-function updateResult() {
-  if (regionChoisie && commerceChoisi) {
-    document.getElementById("result").textContent =
-      commerceChoisi + " en " + regionChoisie;
-  }
-}
+  let selectedRegion = '';
+  let selectedCommerce = '';
 
-function createButtons(list, containerId, type) {
-  const container = document.getElementById(containerId);
-  list.forEach(item => {
-    const btn = document.createElement("button");
-    btn.textContent = item;
-    btn.onclick = () => {
-      document.querySelectorAll("#" + containerId + " button")
-        .forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-
-      if (type === "region") regionChoisie = item;
-      if (type === "commerce") commerceChoisi = item;
-
-      updateResult();
-    };
+  // Génère boutons
+  function makeButton(text, idPrefix, container, onClick){
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    const id = idPrefix + '-' + text.toLowerCase().replace(/[^a-z0-9]+/gi,'-');
+    btn.id = id;
+    btn.textContent = text;
+    btn.type = 'button';
+    btn.onclick = () => onClick(btn, text);
     container.appendChild(btn);
-  });
-}
+    return btn;
+  }
 
-createButtons(regions, "regions", "region");
-createButtons(commerces, "commerces", "commerce");
+  // remplir UI
+  regions.forEach(r => makeButton(r, 'region', regionsList, (btn, text)=>{
+    selectRegion(btn, text);
+  }));
+  commerces.forEach(c => makeButton(c, 'commerce', commerceList, (btn, text)=>{
+    selectCommerce(btn, text);
+  }));
+
+  // sélection region
+  function selectRegion(btn, region){
+    // active style
+    document.querySelectorAll('#regionsList .btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedRegion = region;
+    updateUI();
+  }
+
+  // sélection commerce
+  function selectCommerce(btn, commerce){
+    document.querySelectorAll('#commerceList .btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedCommerce = commerce;
+    updateUI();
+  }
+
+  // Met à jour le centre
+  function updateUI(){
+    // texte résumé
+    if(selectedRegion && selectedCommerce){
+      currentSelection.textContent = `${selectedCommerce} — ${selectedRegion}`;
+      pageTitle.textContent = `Résultats : ${selectedCommerce} en ${selectedRegion}`;
+      pageSubtitle.textContent = `Voici quelques résultats fictifs pour ${selectedCommerce} en ${selectedRegion} :`;
+      controlsTop.style.display = 'flex';
+      renderResults(generateMockResults(selectedCommerce, selectedRegion));
+    } else if(selectedRegion){
+      currentSelection.textContent = `${selectedRegion}`;
+      pageTitle.textContent = `Région : ${selectedRegion}`;
+      pageSubtitle.textContent = `Sélectionnez un type de commerce pour voir les résultats.`;
+      controlsTop.style.display = 'none';
+      clearResults();
+    } else if(selectedCommerce){
+      currentSelection.textContent = `${selectedCommerce}`;
+      pageTitle.textContent = `Commerce : ${selectedCommerce}`;
+      pageSubtitle.textContent = `Sélectionnez une région pour voir les résultats.`;
+      controlsTop.style.display = 'none';
+      clearResults();
+    } else {
+      currentSelection.textContent = `Aucune sélection`;
+      pageTitle.textContent = `Choisissez une région et un commerce`;
+      pageSubtitle.textContent = `Cliquez sur une région puis sur un commerce pour voir des résultats.`;
+      controlsTop.style.display = 'none';
+      clearResults();
+    }
+  }
+
+  // génère résultats fictifs (placeholder)
+  function generateMockResults(commerce, region){
+    // crée 6 résultats avec noms plausibles
+    const names = [
+      `${commerce} du Centre`,
+      `${commerce} de la Place`,
+      `Le ${commerce} Moderne`,
+      `${commerce} du Marché`,
+      `Chez ${commerce}`,
+      `${commerce} & Co.`
+    ];
+    return names.map((n,i)=>({
+      title: `${n} — ${region}`,
+      address: `${10 + i} rue Exemple, ${region}`,
+      phone: `0${6 + i} 12 34 5${i} ${i}`
+    }));
+  }
+
+  // Affiche résultats dans la page
+  function renderResults(items){
+    resultsArea.innerHTML = '';
+    items.forEach(it=>{
+      const card = document.createElement('div');
+      card.className = 'card';
+      const t = document.createElement('div');
+      t.style.fontWeight = '600';
+      t.textContent = it.title;
+      const a = document.createElement('div');
+      a.className = 'muted';
+      a.textContent = it.address;
+      const p = document.createElement('div');
+      p.className = 'muted';
+      p.textContent = it.phone;
+      card.appendChild(t);
+      card.appendChild(a);
+      card.appendChild(p);
+      resultsArea.appendChild(card);
+    });
+  }
+
+  function clearResults(){
+    resultsArea.innerHTML = '';
+  }
+
+  // boutons réinitialiser
+  function clearAll(){
+    selectedRegion = '';
+    selectedCommerce = '';
+    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    updateUI();
+  }
+  clearBtn.addEventListener('click', clearAll);
+  clearBtn2 && clearBtn2.addEventListener('click', clearAll);
+
+  // Afficher tout (exemple)
+  document.getElementById('showAllBtn').addEventListener('click', ()=>{
+    if(!selectedRegion && !selectedCommerce) return;
+    renderResults(generateMockResults(selectedCommerce || 'Commerce', selectedRegion || 'France'));
+  });
+
+  // init
+  updateUI();
 </script>
 
 </body>
 </html>
+
